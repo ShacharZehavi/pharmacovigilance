@@ -9,6 +9,7 @@ import util.matching.Regex
 import collection.mutable.ListBuffer
 import jxl.Workbook
 import jxl.write.{WritableSheet, Label, WritableWorkbook}
+import java.util.{Locale, Date}
 
 /**
  * ZenGuru Software
@@ -19,6 +20,7 @@ import jxl.write.{WritableSheet, Label, WritableWorkbook}
 object PDFExtractor {
   lazy val logger = Logger.getLogger(this.getClass.getName)
   val ADVERSE_EVENT_PATTERN = new Regex("^\\s*\\[(\\d+)\\]")
+  val ACTIVE_INGREDIENTS_PATTERN = new Regex("\\(.+?\\)")
   val ADVERSE_EVENTS_START_ANCHOR = "Adverse Events:"
   val ADVERSE_EVENTS_END_ANCHOR = "I. REACTION INFORMATION"
   val SUSPECTED_DRUGS_START_ANCHOR = "INITIAL FOLLOWUP"
@@ -37,7 +39,16 @@ object PDFExtractor {
     ) }
     //
    parser.parse(args, Config()) map { config => {
-     val excel = createExcelDocument(config.excelFile)
+     val format = new java.text.SimpleDateFormat("dd_MM_yyyy")
+     val fileSuffix = format.format(new Date)
+     val lastDotLocation = config.excelFile.lastIndexOf(".")
+     val outputFile =
+      if (lastDotLocation > 0)
+        config.excelFile.substring(0, lastDotLocation-1) + "_" + fileSuffix  +
+          config.excelFile.substring(lastDotLocation,config.excelFile.length)
+     else
+        config.excelFile
+     val excel = createExcelDocument(outputFile)
      var currentLine = 1
      for(file <- (new File(config.inputDirectory)).listFiles if file.getName.toLowerCase endsWith ".pdf"){
        try {
@@ -68,10 +79,13 @@ object PDFExtractor {
   }
 
 
-  def addEvents(sheet : WritableSheet, startLine : Int, eventId : String, adverseEvents : List[String], suspectedDrugs : List[String]) : Int = {
+  def addEvents(sheet : WritableSheet, startLine : Int, eventId : String, adverseEvents : List[String], suspectedDrugs : List[(String, String)]) : Int = {
     //
     sheet.addCell(new Label(0, startLine, getEventId(eventId)))
-    for( i <- 0 to suspectedDrugs.length -1) sheet.addCell(new Label(1, startLine + i, suspectedDrugs(i)))
+    for( i <- 0 to suspectedDrugs.length -1) {
+      sheet.addCell(new Label(1, startLine + i, suspectedDrugs(i)._1))
+      sheet.addCell(new Label(3, startLine + i, suspectedDrugs(i)._2))
+    }
     for( i <- 0 to adverseEvents.length -1)  sheet.addCell(new Label(2, startLine + i, adverseEvents(i)))
     logger.info("Hello")
     startLine + math.max(suspectedDrugs.length,  adverseEvents.length)
@@ -114,8 +128,9 @@ object PDFExtractor {
         if (line.startsWith(ADVERSE_EVENTS_END_ANCHOR)) adverseEventsSection = false
         //
         if (adverseEventsSection && (ADVERSE_EVENT_PATTERN findFirstIn line).mkString(" ").length > 0) {
-          logger.info("Adverse Event: " + line.split("\\,")(0))
-          events+=line.split("\\,")(0)
+          val adverseEvent = line.split("\\,")(0)
+          events+=adverseEvent
+          logger.info("Adverse Event: " + adverseEvent)
         }
       })
     events.toList
@@ -126,10 +141,10 @@ object PDFExtractor {
    * @param lines
    * @return
    */
-  def processSuspectedDrugs(lines : Array[String]) : List[String] =  {
+  def processSuspectedDrugs(lines : Array[String]) : List[(String, String)] =  {
     var suspectedDrugsSection : Boolean = false
     var lastItemNumber = 1
-    val events = new ListBuffer[String]()
+    val events = new ListBuffer[(String, String)]()
     lines.foreach(
       line =>{
         if (line.startsWith(SUSPECTED_DRUGS_START_ANCHOR)) suspectedDrugsSection = true
@@ -137,8 +152,10 @@ object PDFExtractor {
         //
         val currentMatch = (ADVERSE_EVENT_PATTERN findAllIn line).mkString(" ").replaceAllLiterally("[","").replaceAllLiterally("]","")
         if (suspectedDrugsSection && currentMatch.length > 0 && lastItemNumber == currentMatch.toInt) {
-          logger.info("Suspected drug: " + line.split("\\,")(0))
-          events+=line.split("\\,")(0)
+          val suspectedDrug = line.split("\\,")(0)
+          logger.info("Suspected drug: " + suspectedDrug)
+          val activeIngredients = (ACTIVE_INGREDIENTS_PATTERN findFirstIn suspectedDrug).mkString(" ")
+          events.+=((suspectedDrug.replaceAllLiterally(activeIngredients, ""), activeIngredients.substring(1, activeIngredients.length - 2)))
           lastItemNumber+=1
         }
       })
