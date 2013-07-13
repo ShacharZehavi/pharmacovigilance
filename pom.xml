@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <name>zengurusoft-pharmacovigilance</name>
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.zengurusoft</groupId>
+    <artifactId>pharmacovigilance</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <packaging>jar</packaging>
+    <description>Pharmacovigilance utilities</description>
+    <inceptionYear>2013</inceptionYear>
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+    <scm>
+        <!-- https://github.com/ShacharZehavi/pharmacovigilance.git -->
+        <connection>scm:git:git@github.com:ShacharZehavi/pharmacovigilance.git</connection>
+        <developerConnection>scm:git:git@github.com:ShacharZehavi/pharmacovigilance.git
+        </developerConnection>
+        <url>http://github.com/ShacharZehavi/pharmacovigilance</url>
+    </scm>
+
+    <parent>
+        <groupId>org.sonatype.oss</groupId>
+        <artifactId>oss-parent</artifactId>
+        <version>7</version>
+    </parent>
+
+    <properties>
+        <elasticsearch.version>0.19.0</elasticsearch.version>
+    </properties>
+
+    <repositories>
+        <repository>
+          <id>scala-tools.org</id>
+          <name>Scala-tools Repository</name>
+          <url>http://scala-tools.org/repo-releases</url>
+        </repository>
+        <repository>
+            <id>com.springsource.repository.bundles.external</id>
+            <name>SpringSource Enterprise Bundle Repository - External Bundle Releases</name>
+            <url>http://repository.springsource.com/maven/bundles/external</url>
+        </repository>
+           </repositories>
+     
+     <pluginRepositories>
+        <pluginRepository>
+          <id>scala-tools.org</id>
+          <name>Scala-tools Repository</name>
+          <url>http://scala-tools.org/repo-releases</url>
+        </pluginRepository>
+      </pluginRepositories>
+
+    <dependencies>
+                   <dependency>
+              <groupId>org.scala-lang</groupId>
+              <artifactId>scala-library</artifactId>
+              <version>2.10.1</version>
+            </dependency>
+            <dependency>
+                <groupId>org.scalatest</groupId>
+                <artifactId>scalatest_2.10</artifactId>
+                <version>2.0.M6-SNAP9</version>
+                <scope>test</scope>
+            </dependency>
+
+           <dependency>
+                <groupId>org.apache.pdfbox</groupId>
+                <artifactId>pdfbox</artifactId>
+                <version>1.8.2</version>
+            </dependency>
+            <dependency>
+              <groupId>org.bouncycastle</groupId>
+              <artifactId>bcprov-jdk15</artifactId>
+              <version>1.44</version>
+            </dependency>
+            <dependency>
+              <groupId>org.bouncycastle</groupId>
+              <artifactId>bcmail-jdk15</artifactId>
+              <version>1.44</version>
+            </dependency>
+            <dependency>
+                <groupId>net.sourceforge.jexcelapi</groupId>
+                <artifactId>jxl</artifactId>
+                <version>2.6.12</version>
+            </dependency>
+                       <dependency>
+                <groupId>com.github.scala-incubator.io</groupId>
+                <artifactId>scala-io-core_2.10</artifactId>
+                <version>0.4.2</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.scopt</groupId>
+                <artifactId>scopt_2.10</artifactId>
+                <version>2.1.0</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.github.scala-incubator.io</groupId>
+                <artifactId>scala-io-file_2.10</artifactId>
+                <version>0.4.2</version>
+            </dependency>
+             <dependency>
+                <groupId>org.scala-tools.time</groupId>
+                <artifactId>time_2.9.1</artifactId>
+                <version>0.5</version>
+            </dependency>
+                    <dependency>
+            <groupId>org.codehaus.groovy</groupId>
+            <artifactId>groovy-all</artifactId>
+            <version>2.0.0</version>
+        </dependency>
+  
+    </dependencies>
+
+    <build>
+        <plugins>
+           <plugin>
+                    <groupId>org.scala-tools</groupId>
+                    <artifactId>maven-scala-plugin</artifactId>
+                    <executions>
+                      <execution>
+                        <goals>
+                          <goal>compile</goal>
+                          <goal>testCompile</goal>
+                        </goals>
+                      </execution>
+                    </executions>
+                    <configuration>
+                      <scalaVersion>2.10.1</scalaVersion>
+                      <jvmArgs>
+                        <jvmArg>-Xms64m</jvmArg>
+                        <jvmArg>-Xmx1024m</jvmArg>
+                      </jvmArgs>
+                    </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.2</version>
+                <configuration>
+                    <executable>java</executable>
+                    <arguments>
+                        <argument>-classpath</argument>
+                        <classpath/>
+                        <argument>com.delver.tools.ToolRunner</argument>
+                    </arguments>
+                    <commandlineArgs>
+                        -h devdb1 -l INFO -P 3306 -p MF123456 -u admin
+                    </commandlineArgs>
+                </configuration>
+            </plugin>
+
+
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>compile</id>
+                        <phase>compile</phase>
+                        <configuration>
+                            <tasks>
+                                <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc">
+                                    <classpath>
+                                        <!--<pathelement path="C:\\work\\branches\\taxonomy\\java\\seeding-update-service\\target\\classes"/>-->
+                                        <path refid="maven.compile.classpath"/>
+                                    </classpath>
+                                </taskdef>
+                                <groovyc destdir="target/classes" srcdir="src" listfiles="true">
+                                    <classpath refid="maven.compile.classpath"/>
+                                </groovyc>
+                            </tasks>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+                    </plugins>
+    </build>
+        <profiles>
+        <profile>
+            <id>copy-dependencies</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+</project>
