@@ -155,7 +155,7 @@ object PDFExtractor {
           val suspectedDrug = line.split("\\,")(0)
           logger.info("Suspected drug: " + suspectedDrug)
           val activeIngredients = (ACTIVE_INGREDIENTS_PATTERN findFirstIn suspectedDrug).mkString(" ")
-          events.+=((suspectedDrug.replaceAllLiterally(activeIngredients, ""), activeIngredients.substring(1, activeIngredients.length - 2)))
+          events.+=((suspectedDrug.replaceAllLiterally(activeIngredients, ""), activeIngredients.substring(1, activeIngredients.length - 1)))
           lastItemNumber+=1
         }
       })
